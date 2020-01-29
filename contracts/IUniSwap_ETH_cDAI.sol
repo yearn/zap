@@ -1,9 +1,9 @@
 
 interface IUniSwap_ETH_CDAIZap {
     function getExpectedReturn(uint256 eth) external view returns (uint256);
-    function LetsInvest(address _towhomtoissue, uint256 _minReturn) external payable returns (uint);
+    function LetsInvest(address _towhomtoissue, uint256 _minReturn) external returns (uint);
     function getUniswapExchangeContractAddress() external view returns (address);
-    function Redeem(address payable _towhomtosend, uint256 _amount) external stopInEmergency returns (uint);
+    function Redeem(address payable _towhomtosend, uint256 _amount) external returns (uint);
     function getMaxTokens(address _UniSwapExchangeContractAddress, IERC20 _ERC20TokenAddress, uint _value) external view returns (uint);
     function getEthBalance(address _UniSwapExchangeContractAddress) external view returns (uint);
     function getTokenReserves(address _UniSwapExchangeContractAddress, IERC20 _ERC20TokenAddress) external view returns (uint);

@@ -358,6 +358,11 @@ interface Aave {
     function balanceOf(address _owner) external view returns (uint256 balance);
 }
 
+interface AToken {
+    function redeem(uint256 amount) external;
+    function balanceOf(address _owner) external view returns (uint256 balance);
+}
+
 contract DyDx is Structs {
     function getEarningsRate() public view returns (Hmmm memory);
     function getMarketInterestRate(uint256 marketId) public view returns (Hmmm memory);
@@ -368,7 +373,7 @@ contract DyDx is Structs {
 
 contract InvestZAP is Ownable {
     using SafeMath for uint;
-    using Address fo address;
+    using Address for address;
 
     enum CurrentLender {
         NONE,
@@ -377,8 +382,6 @@ contract InvestZAP is Ownable {
         AAVE,
         FULCRUM
     }
-
-    ERC20 token;
 
     CurrentLender public lender;
 
@@ -397,7 +400,7 @@ contract InvestZAP is Ownable {
     }
 
     function balanceAave(address _token) public view returns (uint256) {
-      return Aave(aave[_token]).balanceOf(address(this));
+      return AToken(aave[_token]).balanceOf(address(this));
     }
 
     function supplyDyDx(address _token, uint256 amount) public returns(uint) {
@@ -443,10 +446,10 @@ contract InvestZAP is Ownable {
     }
 
     function approveToken(address _token) public {
-        _token.approve(compoundAddr, uint(-1)); //also add to constructor
-        _token.approve(dydxAddr, uint(-1));
-        _token.approve(aaveAddr, uint(-1));
-        _token,approve(fulcrumAddr, uint(-1));
+        _token.approve(compound[_token], uint(-1)); //also add to constructor
+        _token.approve(DYDX, uint(-1));
+        _token.approve(AAVE, uint(-1));
+        _token.approve(fulcrum[_token], uint(-1));
     }
 
     function rebalance(address _token) public {
@@ -454,7 +457,7 @@ contract InvestZAP is Ownable {
         TODO: Calculate new balance
       */
 
-      CurrentLender public newLender;
+      CurrentLender newLender;
 
       if (newLender != lender) {
         // Remove from current
@@ -487,13 +490,27 @@ contract InvestZAP is Ownable {
       }
     }
 
+    function supplyAave(address _token, uint amount) public {
+      Aave(AAVE).deposit(_token, amount, 0);
+      lender = CurrentLender.AAVE;
+    }
+    function supplyFulcrum(address _token, uint amount) public {
+      require(Fulcrum(fulcrum[_token]).mint(address(this), amount) > 0, "FULCRUM: supply failed");
+      lender = CurrentLender.FULCRUM;
+    }
     function supplyCompound(address _token, uint amount) public {
-        require(Compound(compound[_token]).mint(amount) == 0, "COMPOUND: mint fail");
+        require(Compound(compound[_token]).mint(amount) == 0, "COMPOUND: supply failed");
         lender = CurrentLender.COMPOUND;
     }
 
+    function withdrawAave(address _token, uint amount) public {
+        AToken(aave[_token]).redeem(amount);
+    }
+    function withdrawFulcrum(address _token, uint amount) public {
+        require(Fulcrum(fulcrum[_token]).burn(address(this), amount) > 0, "FULCRUM: withdraw failed");
+    }
     function withdrawCompound(address _token, uint amount) public {
-        require(Compound(compound[_token]).redeem(amount) == 0, "COMPOUND: redeem fail");
+        require(Compound(compound[_token]).redeem(amount) == 0, "COMPOUND: withdraw failed");
     }
 
     // incase of half-way error
