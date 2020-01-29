@@ -532,8 +532,6 @@ contract InvestZAP is Ownable, Structs {
         APR = _new_APR;
     }
 
-    CurrentLender public lender;
-
     function recommend(address _token) public view returns (CurrentLender) {
       (,uint256 capr,uint256 iapr,uint256 aapr,uint256 dapr) = IIEarnManager(APR).recommend(_token);
       uint256 max = 0;
@@ -602,8 +600,6 @@ contract InvestZAP is Ownable, Structs {
         args[0] = act;
 
         DyDx(DYDX).operate(infos, args);
-
-        lender = CurrentLender.DYDX;
     }
 
     function withdrawDydx(address _token, uint256 amount) public {
@@ -659,22 +655,9 @@ contract InvestZAP is Ownable, Structs {
     function rebalance(address _token) public {
       CurrentLender newLender = recommend(_token);
 
-      if (newLender != lender) {
-        // Remove from current
-        if (lender == CurrentLender.DYDX) {
-          withdrawDydx(_token, balanceDydx(_token));
-        }
-        if (lender == CurrentLender.FULCRUM) {
-          withdrawFulcrum(_token, balanceFulcrum(_token));
-        }
-        if (lender == CurrentLender.COMPOUND) {
-          withdrawCompound(_token, balanceCompound(_token));
-        }
-        if (lender == CurrentLender.AAVE) {
-          withdrawAave(_token, balanceAave(_token));
-        }
+      withdrawAll(_token);
 
-        // Provide to new
+      if (balance(_token) > 0) {
         if (newLender == CurrentLender.DYDX) {
           supplyDydx(_token, balance(_token));
         }
@@ -692,15 +675,12 @@ contract InvestZAP is Ownable, Structs {
 
     function supplyAave(address _token, uint amount) public {
       Aave(AAVE).deposit(_token, amount, 0);
-      lender = CurrentLender.AAVE;
     }
     function supplyFulcrum(address _token, uint amount) public {
       require(Fulcrum(fulcrum[_token]).mint(address(this), amount) > 0, "FULCRUM: supply failed");
-      lender = CurrentLender.FULCRUM;
     }
     function supplyCompound(address _token, uint amount) public {
         require(Compound(compound[_token]).mint(amount) == 0, "COMPOUND: supply failed");
-        lender = CurrentLender.COMPOUND;
     }
 
     function withdrawAave(address _token, uint amount) public {
