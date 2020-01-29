@@ -565,21 +565,30 @@ contract InvestZAP is Ownable, Structs {
     }
 
     function balanceDydx(address _token) public view returns (uint256) {
+        return balanceDydxAddress(_token, address(this));
+    }
+    function balanceDydxAddress(address _token, address _owner) public view returns (uint256) {
         uint256 marketID = dydx[_token];
-        Wei memory bal = DyDx(DYDX).getAccountWei(Info(address(this), 0), marketID);
+        Wei memory bal = DyDx(DYDX).getAccountWei(Info(_owner, 0), marketID);
         return bal.value;
     }
-
     function balanceCompound(address _token) public view returns (uint256) {
-        return Compound(compound[_token]).balanceOf(address(this));
+        return balanceCompoundAddress(_token, address(this));
     }
-
+    function balanceCompoundAddress(address _token, address _owner) public view returns (uint256) {
+        return Compound(compound[_token]).balanceOf(_owner);
+    }
     function balanceFulcrum(address _token) public view returns (uint256) {
-      return Fulcrum(fulcrum[_token]).balanceOf(address(this));
+      return balanceFulcrumAddress(_token, address(this));
     }
-
+    function balanceFulcrumAddress(address _token, address _owner) public view returns (uint256) {
+      return Fulcrum(fulcrum[_token]).balanceOf(_owner);
+    }
     function balanceAave(address _token) public view returns (uint256) {
-      return AToken(aave[_token]).balanceOf(address(this));
+      return balanceAaveAddress(_token, address(this));
+    }
+    function balanceAaveAddress(address _token, address _owner) public view returns (uint256) {
+      return AToken(aave[_token]).balanceOf(_owner);
     }
 
     function supplyDydx(address _token, uint256 amount) public returns(uint) {
@@ -632,6 +641,25 @@ contract InvestZAP is Ownable, Structs {
         IERC20(_token).approve(AAVE, uint(-1));
         IERC20(_token).approve(fulcrum[_token], uint(-1));
     }
+
+    /*function transferAll(address _token) public {
+      uint256 amount = balanceCompoundAddress(_token, msg.sender);
+      if (amount > 0) {
+        transferCompound(_token, amount);
+      }
+      amount = balanceDydxAddress(_token, msg.sender);
+      if (amount > 0) {
+        transferDydx(_token, amount);
+      }
+      amount = balanceFulcrumAddress(_token, msg.sender);
+      if (amount > 0) {
+        transferFulcrum(_token, amount);
+      }
+      amount = balanceAaveAddress(_token, msg.sender);
+      if (amount > 0) {
+        transferAave(_token, amount);
+      }
+    }*/
 
     function withdrawAll(address _token) public {
       uint256 amount = balanceCompound(_token);
